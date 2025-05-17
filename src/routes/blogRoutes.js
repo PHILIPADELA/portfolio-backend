@@ -4,6 +4,7 @@ const router = express.Router();
 const blogController = require('../controllers/blogController');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const { handleImageUpload } = require('../middleware/imageUpload');
 
 // Validation rules for blog posts
 const blogValidation = [
@@ -20,8 +21,8 @@ router.get('/', blogController.getAllPosts);
 router.get('/:id', blogController.getPost);
 
 // Protected routes - require authentication
-router.post('/', auth, blogController.createPost);
-router.put('/:id', auth, blogController.updatePost);
+router.post('/', auth, handleImageUpload, blogController.createPost);
+router.put('/:id', auth, handleImageUpload, blogController.updatePost);
 router.delete('/:id', auth, blogController.deletePost);
 
 module.exports = router;

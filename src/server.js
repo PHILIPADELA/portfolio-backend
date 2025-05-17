@@ -6,6 +6,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const config = require('./config/config');
 const ensureUploadDirectories = require('./utils/ensureDirectories');
+const fs = require('fs');
 
 // Create required directories
 ensureUploadDirectories();
@@ -50,11 +51,32 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files with CORS headers
 app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', config.CLIENT_URL);
+  res.header('Access-Control-Allow-Origin', '*');  // Allow all origins to access images
   res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', '*');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, express.static(path.join(__dirname, '../uploads')));
+}, express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res, path) => {
+    res.set('Content-Type', 'image/jpeg');  // Set proper content type for images
+    res.set('Cache-Control', 'public, max-age=31557600');  // Cache for 1 year
+  }
+}));
+
+// Debug endpoint to check image paths
+app.get('/debug/images', (req, res) => {
+  const uploadsPath = path.join(__dirname, '../uploads/blog');
+  fs.readdir(uploadsPath, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error reading uploads directory', details: err.message });
+    }
+    res.json({
+      uploadsPath,
+      files,
+      fullUrls: files.map(file => `${req.protocol}://${req.get('host')}/uploads/blog/${file}`)
+    });
+  });
+});
 
 // Routes
 app.use('/api/contact', contactRoutes);
