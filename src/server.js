@@ -51,14 +51,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files with CORS headers
 app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');  // Allow all origins to access images
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, express.static(path.join(__dirname, '../uploads'), {
-  setHeaders: (res, path) => {
-    res.set('Content-Type', 'image/jpeg');  // Set proper content type for images
+  setHeaders: (res, filePath) => {
+    // Set content type based on file extension
+    const ext = path.extname(filePath).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+    else if (ext === '.png') contentType = 'image/png';
+    else if (ext === '.gif') contentType = 'image/gif';
+    
+    res.set('Content-Type', contentType);
     res.set('Cache-Control', 'public, max-age=31557600');  // Cache for 1 year
   }
 }));
