@@ -123,9 +123,28 @@ exports.updatePost = async (req, res) => {
       }
 
       const postId = req.params.id;
-      const updateData = { ...req.body };
+      
+      // Find the existing post first
+      const existingPost = await BlogPost.findById(postId);
+      if (!existingPost) {
+        return res.status(404).json({ message: 'Blog post not found' });
+      }
 
+      const updateData = { ...req.body };
+      
+      // Handle image update
       if (req.file) {
+        // Delete old image if it exists
+        if (existingPost.image) {
+          const oldImagePath = path.join(__dirname, '../../', existingPost.image);
+          try {
+            await fs.promises.unlink(oldImagePath);
+            console.log(`Deleted old image: ${oldImagePath}`);
+          } catch (err) {
+            console.error('Error deleting old image:', err);
+            // Continue with update even if old image deletion fails
+          }
+        }
         updateData.image = `/uploads/blog/${req.file.filename}`;
       }
       
@@ -133,17 +152,13 @@ exports.updatePost = async (req, res) => {
         updateData.tags = JSON.parse(updateData.tags);
       }
 
-      const post = await BlogPost.findByIdAndUpdate(
+      const updatedPost = await BlogPost.findByIdAndUpdate(
         postId,
         updateData,
         { new: true }
       );
 
-      if (!post) {
-        return res.status(404).json({ message: 'Blog post not found' });
-      }
-
-      res.json(post);
+      res.json(updatedPost);
     });
   } catch (error) {
     console.error('Error updating blog post:', error);
@@ -154,10 +169,24 @@ exports.updatePost = async (req, res) => {
 // Delete a blog post
 exports.deletePost = async (req, res) => {
   try {
-    const post = await BlogPost.findByIdAndDelete(req.params.id);
+    const post = await BlogPost.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
+
+    // Delete the image file if it exists
+    if (post.image) {
+      const imagePath = path.join(__dirname, '../../', post.image);
+      try {
+        await fs.promises.unlink(imagePath);
+        console.log(`Deleted image file: ${imagePath}`);
+      } catch (err) {
+        console.error('Error deleting image file:', err);
+        // Continue with post deletion even if image deletion fails
+      }
+    }
+
+    await BlogPost.findByIdAndDelete(req.params.id);
     res.json({ message: 'Blog post deleted successfully' });
   } catch (error) {
     console.error('Error deleting blog post:', error);

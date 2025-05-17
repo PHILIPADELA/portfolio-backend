@@ -5,6 +5,10 @@ const helmet = require('helmet');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const config = require('./config/config');
+const ensureUploadDirectories = require('./utils/ensureDirectories');
+
+// Create required directories
+ensureUploadDirectories();
 
 // Import routes
 const contactRoutes = require('./routes/contactRoutes');
