@@ -9,9 +9,20 @@ const storage = multer.diskStorage({
     try {
       await fs.mkdir(uploadPath, { recursive: true });
       console.log('Upload directory ensured:', uploadPath);
+      
+      // Verify directory exists and is writable
+      const testFile = path.join(uploadPath, '.test');
+      await fs.writeFile(testFile, '');
+      await fs.unlink(testFile);
+      
+      console.log('Upload directory is writable:', uploadPath);
       cb(null, uploadPath);
     } catch (err) {
-      console.error('Error creating upload directory:', err);
+      console.error('Error with upload directory:', {
+        path: uploadPath,
+        error: err.message,
+        code: err.code
+      });
       cb(err);
     }
   },

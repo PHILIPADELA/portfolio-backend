@@ -51,10 +51,36 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files with CORS headers
 app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(__dirname, '../uploads', req.url);
+  console.log('Static file request received:', {
+    url: req.url,
+    fullPath: filePath,
+    exists: fs.existsSync(filePath)
+  });
+
+  // Ensure uploads directory exists
+  const uploadsDir = path.join(__dirname, '../uploads/blog');
+  if (!fs.existsSync(uploadsDir)) {
+    console.log('Creating uploads directory:', uploadsDir);
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Set CORS headers
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+
+  // If file doesn't exist, return 404 with helpful message
+  if (!fs.existsSync(filePath)) {
+    console.error('File not found:', filePath);
+    return res.status(404).json({
+      error: 'File not found',
+      requestedPath: req.url,
+      fullPath: filePath
+    });
+  }
+
   next();
 }, express.static(path.join(__dirname, '../uploads'), {
   setHeaders: (res, filePath) => {
@@ -66,6 +92,7 @@ app.use('/uploads', (req, res, next) => {
     else if (ext === '.png') contentType = 'image/png';
     else if (ext === '.gif') contentType = 'image/gif';
     
+    console.log('Serving file:', filePath, 'with content-type:', contentType);
     res.set('Content-Type', contentType);
     res.set('Cache-Control', 'public, max-age=31557600');  // Cache for 1 year
   }
