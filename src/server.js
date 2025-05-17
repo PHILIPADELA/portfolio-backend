@@ -19,9 +19,18 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false
 }));
+
+// CORS configuration
 app.use(cors({
-  origin: config.CLIENT_URL,
-  credentials: true
+  origin: [
+    'https://portfolio-frontend-wheat-ten.vercel.app',
+    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
+    'http://localhost:2000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Rate limiting
