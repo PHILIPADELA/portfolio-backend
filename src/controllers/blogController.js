@@ -1,6 +1,7 @@
 const BlogPost = require('../models/BlogPost');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // Configure multer for blog post image uploads
 const storage = multer.diskStorage({
@@ -115,51 +116,61 @@ exports.createPost = async (req, res) => {
 };
 
 // Update a blog post
-exports.updatePost = async (req, res) => {
-  try {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: err.message });
-      }
-
-      const postId = req.params.id;
-      
-      // Find the existing post first
-      const existingPost = await BlogPost.findById(postId);
-      if (!existingPost) {
-        return res.status(404).json({ message: 'Blog post not found' });
-      }
-
-      const updateData = { ...req.body };
-      
-      // Handle image update
-      if (req.file) {
-        // Delete old image if it exists
-        if (existingPost.image) {
-          const oldImagePath = path.join(__dirname, '../../', existingPost.image);
-          try {
-            await fs.promises.unlink(oldImagePath);
-            console.log(`Deleted old image: ${oldImagePath}`);
-          } catch (err) {
-            console.error('Error deleting old image:', err);
-            // Continue with update even if old image deletion fails
-          }
-        }
-        updateData.image = `/uploads/blog/${req.file.filename}`;
-      }
-      
-      if (updateData.tags) {
-        updateData.tags = JSON.parse(updateData.tags);
-      }
-
-      const updatedPost = await BlogPost.findByIdAndUpdate(
-        postId,
-        updateData,
-        { new: true }
-      );
-
-      res.json(updatedPost);
+exports.updatePost = async (req, res) => {  try {
+    console.log('Update request received:', {
+      body: req.body,
+      file: req.file,
+      params: req.params
     });
+
+    const postId = req.params.id;
+    
+    // Find the existing post first
+    const existingPost = await BlogPost.findById(postId);
+    if (!existingPost) {
+      return res.status(404).json({ message: 'Blog post not found' });
+    }
+
+    const updateData = { ...req.body };
+    
+    // Handle image update
+    if (req.file) {
+      // Delete old image if it exists
+      if (existingPost.image) {
+        const oldImagePath = path.join(__dirname, '../../', existingPost.image);
+        try {
+          await fs.promises.unlink(oldImagePath);
+          console.log(`Deleted old image: ${oldImagePath}`);
+        } catch (err) {
+          console.error('Error deleting old image:', err);
+          // Continue with update even if old image deletion fails
+        }
+      }
+      updateData.image = `/uploads/blog/${req.file.filename}`;
+    }
+
+    // Handle tags field
+    try {
+      if (updateData.tags) {
+        // Check if tags is already an array
+        updateData.tags = typeof updateData.tags === 'string' 
+          ? JSON.parse(updateData.tags)
+          : updateData.tags;
+      }
+    } catch (error) {
+      console.error('Error parsing tags:', error);
+      updateData.tags = [];
+    }
+
+    console.log('Updating post with data:', updateData);
+
+    const updatedPost = await BlogPost.findByIdAndUpdate(
+      postId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.json(updatedPost);
   } catch (error) {
     console.error('Error updating blog post:', error);
     res.status(500).json({ message: 'Error updating blog post', error: error.message });

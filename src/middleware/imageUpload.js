@@ -63,8 +63,12 @@ const handleImageUpload = (req, res, next) => {
       });
     }
     
-    if (!req.file) {
-      console.log('No image file provided');
+    if (req.method === 'PUT' && !req.file) {
+      // For updates (PUT), allow no image to be provided
+      console.log('No new image provided for update');
+    } else if (req.method === 'POST' && !req.file) {
+      // For new posts (POST), require an image
+      console.log('No image file provided for new post');
       return res.status(400).json({ 
         message: 'Please provide an image file' 
       });
