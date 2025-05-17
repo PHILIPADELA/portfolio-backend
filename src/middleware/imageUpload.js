@@ -9,13 +9,6 @@ const storage = multer.diskStorage({
     try {
       await fs.mkdir(uploadPath, { recursive: true });
       console.log('Upload directory ensured:', uploadPath);
-      
-      // Verify directory exists and is writable
-      const testFile = path.join(uploadPath, '.test');
-      await fs.writeFile(testFile, '');
-      await fs.unlink(testFile);
-      
-      console.log('Upload directory is writable:', uploadPath);
       cb(null, uploadPath);
     } catch (err) {
       console.error('Error with upload directory:', {
@@ -27,7 +20,6 @@ const storage = multer.diskStorage({
     }
   },
   filename: (req, file, cb) => {
-    // Create a URL-friendly filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const extension = path.extname(file.originalname).toLowerCase();
     const filename = `blog-${uniqueSuffix}${extension}`;
@@ -65,53 +57,47 @@ const upload = multer({
 
 // Middleware to handle image upload
 const handleImageUpload = (req, res, next) => {
+  console.log('Starting image upload...');
+  console.log('Request headers:', req.headers);
+  
   upload.single('image')(req, res, (err) => {
-    if (err) {
-      console.error('Image upload error:', err);
-      return res.status(400).json({ 
-        message: 'Image upload failed', 
-        error: err.message 
+    if (err instanceof multer.MulterError) {
+      console.error('Multer error:', err);
+      return res.status(400).json({
+        message: 'File upload error',
+        error: err.message
+      });
+    } else if (err) {
+      console.error('Non-Multer error during upload:', err);
+      return res.status(400).json({
+        message: 'Image upload failed',
+        error: err.message
       });
     }
-    
+
     if (req.method === 'PUT' && !req.file) {
       // For updates (PUT), allow no image to be provided
       console.log('No new image provided for update');
+      next();
     } else if (req.method === 'POST' && !req.file) {
       // For new posts (POST), require an image
       console.log('No image file provided for new post');
-      return res.status(400).json({ 
-        message: 'Please provide an image file' 
+      return res.status(400).json({
+        message: 'Please provide an image file'
       });
+    } else {
+      // Log successful upload
+      console.log('Image uploaded successfully:', {
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+      next();
     }
-
-    // Log successful upload
-    console.log('Image uploaded successfully:', {
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    });
-
-    next();
   });
 };
 
-// Utility function to delete image file
-const deleteImage = async (imagePath) => {
-  if (!imagePath) return;
-  
-  const fullPath = path.join(__dirname, '../../', imagePath);
-  try {
-    await fs.unlink(fullPath);
-    console.log('Successfully deleted image:', fullPath);
-  } catch (err) {
-    console.error('Error deleting image:', fullPath, err);
-    // Don't throw error, just log it
-  }
-};
-
 module.exports = {
-  handleImageUpload,
-  deleteImage
+  handleImageUpload
 };
