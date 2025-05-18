@@ -67,15 +67,12 @@ exports.createComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
   try {
-    const { blogPostId, commentId } = req.params;
+    const { commentId } = req.params;
     const { deleteKey } = req.query;
     
-    const comment = await Comment.findOne({ 
-      _id: commentId,
-      blogPostId
-    });
+    const comment = await Comment.findById(commentId);
     if (!comment) {
-      return res.status(404).json({ message: 'Comment not found or does not belong to this blog post' });
+      return res.status(404).json({ message: 'Comment not found' });
     }
 
     if (!deleteKey || comment.deleteKey !== deleteKey) {
@@ -91,96 +88,5 @@ exports.deleteComment = async (req, res) => {
   } catch (error) {
     console.error('Error deleting comment:', error);
     res.status(500).json({ message: 'Error deleting comment', error: error.message });
-  }
-};
-
-exports.getReplies = async (req, res) => {
-  try {
-    console.log('Received getReplies request with params:', req.params);
-    const { blogPostId, commentId } = req.params;
-    console.log('Looking for replies with blogPostId:', blogPostId, 'and commentId:', commentId);
-    
-    const replies = await Comment.find({ 
-      blogPostId,
-      replyTo: commentId 
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-    
-    res.status(200).json(replies);
-  } catch (error) {
-    console.error('Error fetching replies:', error);
-    res.status(500).json({ message: 'Error fetching replies', error: error.message });
-  }
-};
-
-exports.createReply = async (req, res) => {
-  try {
-    const { blogPostId, commentId } = req.params;
-    const { author, content } = req.body;
-
-    if (!author || !content) {
-      return res.status(400).json({ message: 'Author and content are required' });
-    }
-
-    // Find the parent comment and verify it belongs to the blog post
-    const parentComment = await Comment.findOne({
-      _id: commentId,
-      blogPostId
-    });
-    if (!parentComment) {
-      return res.status(404).json({ message: 'Parent comment not found or does not belong to this blog post' });
-    }
-
-    const reply = new Comment({
-      blogPostId: parentComment.blogPostId,
-      author,
-      content,
-      replyTo: commentId,
-      parentAuthor: parentComment.author
-    });
-
-    await reply.save();
-    const replyResponse = reply.toObject();
-
-    if (!replyResponse.deleteKey) {
-      console.error('DeleteKey not generated for reply:', replyResponse);
-      return res.status(500).json({ message: 'Error creating reply: No delete key generated' });
-    }
-
-    res.status(201).json(replyResponse);
-  } catch (error) {
-    console.error('Error creating reply:', error);
-    res.status(500).json({ message: 'Error creating reply', error: error.message });
-  }
-};
-
-exports.deleteReply = async (req, res) => {
-  try {
-    const { blogPostId, commentId, replyId } = req.params;
-    const { deleteKey } = req.query;
-
-    const reply = await Comment.findOne({
-      _id: replyId,
-      blogPostId: blogPostId,
-      replyTo: commentId
-    });
-    if (!reply) {
-      return res.status(404).json({ message: 'Reply not found or does not belong to this blog post and comment' });
-    }
-
-    if (!reply.replyTo) {
-      return res.status(400).json({ message: 'This comment is not a reply' });
-    }
-
-    if (!deleteKey || reply.deleteKey !== deleteKey) {
-      return res.status(403).json({ message: 'Not authorized to delete this reply' });
-    }
-
-    await Comment.findByIdAndDelete(replyId);
-    res.status(200).json({ message: 'Reply deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting reply:', error);
-    res.status(500).json({ message: 'Error deleting reply', error: error.message });
   }
 };
