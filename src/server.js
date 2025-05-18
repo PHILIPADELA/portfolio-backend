@@ -133,8 +133,8 @@ app.get('/debug/images', (req, res) => {
 app.use('/api/contact', contactRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', commentRoutes);  
 app.use('/api/blog', blogRoutes);
-app.use('/api', commentRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

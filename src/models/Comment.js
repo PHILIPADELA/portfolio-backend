@@ -12,6 +12,10 @@ const commentSchema = new mongoose.Schema({
     ref: 'Comment',
     default: null
   },
+  parentAuthor: {
+    type: String,
+    default: null
+  },
   deleteKey: {
     type: String,
     required: true,

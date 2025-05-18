@@ -4,29 +4,15 @@ exports.getComments = async (req, res) => {
   try {
     const blogPostId = req.params.blogPostId;
     const comments = await Comment.find({ blogPostId })
-      .populate({
-        path: 'replyTo',
-        select: 'author _id', // Only get the author and _id of the parent comment
-      })
       .sort({ createdAt: -1 })
       .lean();
-      
-    // Add a parentAuthor field to make it easier for the frontend
-    comments.forEach(comment => {
-      if (comment.replyTo) {
-        comment.parentAuthor = comment.replyTo.author;
-        // Clean up the populated data to avoid sending unnecessary info
-        delete comment.replyTo;
-      }
-    });
-
+    
     res.status(200).json(comments);
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).json({ message: 'Error fetching comments', error: error.message });
   }
 };
-
 
 exports.createComment = async (req, res) => {
   try {
@@ -35,7 +21,11 @@ exports.createComment = async (req, res) => {
 
     if (!author || !content) {
       return res.status(400).json({ message: 'Author and content are required' });
-    }    // If this is a reply, verify the parent comment exists
+    }
+
+    let parentAuthor = null;
+    
+    // If this is a reply, verify the parent comment exists and get its author
     if (replyTo) {
       const parentComment = await Comment.findOne({
         _id: replyTo,
@@ -47,43 +37,29 @@ exports.createComment = async (req, res) => {
           message: 'Parent comment not found or does not belong to this blog post'
         });
       }
-    }    const comment = new Comment({
+
+      parentAuthor = parentComment.author;
+    }
+
+    const comment = new Comment({
       blogPostId,
       author,
       content,
-      replyTo
+      replyTo,
+      parentAuthor // Save the parent author's name
     });
     
     await comment.save();
-
-    // If this is a reply, populate the parent comment info
-    if (replyTo) {
-      const populatedComment = await Comment.findById(comment._id)
-        .populate({
-          path: 'replyTo',
-          select: 'author _id'
-        });
-      
-      const commentResponse = populatedComment.toObject();
-      commentResponse.parentAuthor = commentResponse.replyTo.author;
-      delete commentResponse.replyTo;
-
-      if (!commentResponse.deleteKey) {
-        console.error('DeleteKey not generated for comment:', commentResponse);
-        return res.status(500).json({ message: 'Error creating comment: No delete key generated' });
-      }
-      
-      console.log('Created reply with deleteKey:', commentResponse.deleteKey);
-      res.status(201).json(commentResponse);
-    } else {
-      const commentResponse = comment.toObject();
-      if (!commentResponse.deleteKey) {
-        console.error('DeleteKey not generated for comment:', commentResponse);
-        return res.status(500).json({ message: 'Error creating comment: No delete key generated' });
-      }
-      console.log('Created comment with deleteKey:', commentResponse.deleteKey);
-      res.status(201).json(commentResponse);
-    }  } catch (error) {
+    const commentResponse = comment.toObject();
+    
+    if (!commentResponse.deleteKey) {
+      console.error('DeleteKey not generated for comment:', commentResponse);
+      return res.status(500).json({ message: 'Error creating comment: No delete key generated' });
+    }
+    
+    console.log(replyTo ? 'Created reply with deleteKey:' : 'Created comment with deleteKey:', commentResponse.deleteKey);
+    res.status(201).json(commentResponse);
+  } catch (error) {
     console.error('Error creating comment:', error);
     res.status(500).json({ message: 'Error creating comment', error: error.message });
   }
@@ -103,7 +79,11 @@ exports.deleteComment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
     
+    // Also delete any replies to this comment
+    await Comment.deleteMany({ replyTo: commentId });
+    // Delete the comment itself
     await Comment.findByIdAndDelete(commentId);
+    
     res.status(200).json({ message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
