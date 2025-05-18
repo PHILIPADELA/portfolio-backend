@@ -40,12 +40,20 @@ exports.createComment = async (req, res) => {
 // Delete a comment
 exports.deleteComment = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.commentId);
+    const { commentId } = req.params;
+    const { deleteKey } = req.query;
+
+    const comment = await Comment.findById(commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    await Comment.findByIdAndDelete(req.params.commentId);
+    // Check if delete key matches
+    if (comment.deleteKey !== deleteKey) {
+      return res.status(403).json({ message: 'Invalid delete key' });
+    }
+
+    await Comment.findByIdAndDelete(commentId);
     res.json({ message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
