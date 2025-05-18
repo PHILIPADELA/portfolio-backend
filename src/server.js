@@ -16,6 +16,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const blogRoutes = require('./routes/blogRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 
 const app = express();
 
@@ -131,6 +132,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api', commentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
