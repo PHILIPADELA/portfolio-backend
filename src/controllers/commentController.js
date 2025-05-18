@@ -96,7 +96,10 @@ exports.deleteComment = async (req, res) => {
 
 exports.getReplies = async (req, res) => {
   try {
+    console.log('Received getReplies request with params:', req.params);
     const { blogPostId, commentId } = req.params;
+    console.log('Looking for replies with blogPostId:', blogPostId, 'and commentId:', commentId);
+    
     const replies = await Comment.find({ 
       blogPostId,
       replyTo: commentId 

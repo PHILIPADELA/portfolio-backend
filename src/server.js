@@ -60,7 +60,7 @@ app.use('/api/blog', (req, res, next) => {
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 1000
 });
 app.use(limiter);
 
@@ -130,11 +130,21 @@ app.get('/debug/images', (req, res) => {
 });
 
 
+// Mount routes
 app.use('/api/contact', contactRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
-app.use('/api/blog', commentRoutes);
+// Log before mounting comment routes to debug routing
+app.use('/api/blog', (req, res, next) => {
+  console.log('Comment route middleware:', {
+    method: req.method,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    params: req.params
+  });
+  next();
+}, commentRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -4,6 +4,16 @@ const cors = require('cors');
 
 router.use(cors());
 
+// Log all incoming requests to debug routing
+router.use((req, res, next) => {
+  console.log('Comment route hit:', {
+    method: req.method,
+    path: req.path,
+    params: req.params,
+  });
+  next();
+});
+
 // Get all comments for a blog post
 router.get('/:blogPostId/comments', commentController.getComments);
 
