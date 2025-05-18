@@ -1,11 +1,10 @@
 const Comment = require('../models/Comment');
 
-// Get all comments for a blog post
 exports.getComments = async (req, res) => {
   try {
-    const blogPostId = req.params.blogPostId;
-    const comments = await Comment.find({ blogPostId })
-      .sort({ createdAt: -1 });
+    const blogPostId = req.params.blogPostId;    const comments = await Comment.find({ blogPostId })
+      .sort({ createdAt: -1 })
+      .lean(); 
     res.json(comments);
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -13,7 +12,7 @@ exports.getComments = async (req, res) => {
   }
 };
 
-// Create a new comment
+
 exports.createComment = async (req, res) => {
   try {
     const { blogPostId } = req.params;
@@ -21,34 +20,38 @@ exports.createComment = async (req, res) => {
 
     if (!author || !content) {
       return res.status(400).json({ message: 'Author and content are required' });
-    }
-
-    const comment = new Comment({
+    }    const comment = new Comment({
       blogPostId,
       author,
       content
-    });
-
-    await comment.save();
-    res.status(201).json(comment);
+    });    await comment.save();
+    const commentResponse = comment.toObject();
+    // Make sure deleteKey is included in the response
+    if (!commentResponse.deleteKey) {
+      console.error('DeleteKey not generated for comment:', commentResponse);
+      return res.status(500).json({ message: 'Error creating comment: No delete key generated' });
+    }
+    console.log('Created comment with deleteKey:', commentResponse.deleteKey);
+    res.status(201).json(commentResponse);
   } catch (error) {
     console.error('Error creating comment:', error);
     res.status(500).json({ message: 'Error creating comment', error: error.message });
   }
 };
 
-// Delete a comment
+
 exports.deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const { deleteKey } = req.query;
-
-    const comment = await Comment.findById(commentId);
+    const { deleteKey } = req.query;    const comment = await Comment.findById(commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    // Check if delete key matches
+
+    if (!deleteKey || comment.deleteKey !== deleteKey) {
+      return res.status(403).json({ message: 'Not authorized to delete this comment' });
+    }
     if (comment.deleteKey !== deleteKey) {
       return res.status(403).json({ message: 'Invalid delete key' });
     }
