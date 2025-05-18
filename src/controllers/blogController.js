@@ -1,35 +1,6 @@
 const BlogPost = require('../models/BlogPost');
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-
-// Configure multer for blog post image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../uploads/blog/');
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'blog-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
-    }
-  }
-}).single('image');
+const fs = require('fs').promises;
 
 // Get all blog posts
 exports.getAllPosts = async (req, res) => {
@@ -63,52 +34,46 @@ exports.getPost = async (req, res) => {
 // Create a new blog post
 exports.createPost = async (req, res) => {
   try {
-    // Handle file upload first
-    upload(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: err.message });
-      }
+    console.log('Create post request body:', req.body);
+    console.log('Create post request file:', req.file);
 
-      // Validate required fields
-      const requiredFields = ['title', 'excerpt', 'content', 'category', 'author', 'readTime'];
-      const missingFields = requiredFields.filter(field => !req.body[field]);
-      
-      if (missingFields.length > 0) {
-        return res.status(400).json({ 
-          message: `Missing required fields: ${missingFields.join(', ')}` 
-        });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ message: 'Image is required' });
-      }
-
-      const {
-        title,
-        excerpt,
-        content,
-        category,
-        tags,
-        author,
-        readTime
-      } = req.body;if (!req.file) {
-        return res.status(400).json({ message: 'Image is required' });
-      }
-
-      const blogPost = new BlogPost({
-        title,
-        excerpt,
-        content,
-        image: `/uploads/blog/${req.file.filename}`,
-        category,
-        tags: tags ? JSON.parse(tags) : [],
-        author,
-        readTime
+    // Validate required fields
+    const requiredFields = ['title', 'excerpt', 'content', 'category', 'author', 'readTime'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
       });
+    }
 
-      await blogPost.save();
-      res.status(201).json(blogPost);
+    if (!req.file) {
+      return res.status(400).json({ message: 'Image is required' });
+    }
+
+    const {
+      title,
+      excerpt,
+      content,
+      category,
+      tags,
+      author,
+      readTime
+    } = req.body;
+
+    const blogPost = new BlogPost({
+      title,
+      excerpt,
+      content,
+      image: `/uploads/blog/${req.file.filename}`,
+      category,
+      tags: tags ? JSON.parse(tags) : [],
+      author,
+      readTime
     });
+
+    await blogPost.save();
+    res.status(201).json(blogPost);
   } catch (error) {
     console.error('Error creating blog post:', error);
     res.status(500).json({ message: 'Error creating blog post', error: error.message });

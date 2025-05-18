@@ -34,9 +34,23 @@ app.use(cors({
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+// Handle preflight requests for file uploads
+app.options('/api/blog', cors());
+
+// Custom middleware to handle multipart requests
+app.use('/api/blog', (req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT') {
+    if (req.headers['content-type']?.startsWith('multipart/form-data')) {
+      return next();
+    }
+  }
+  express.json()(req, res, next);
+});
 
 // Rate limiting
 const limiter = rateLimit({
