@@ -7,6 +7,11 @@ const commentSchema = new mongoose.Schema({
     ref: 'BlogPost',
     required: true
   },
+  replyTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment',
+    default: null
+  },
   deleteKey: {
     type: String,
     required: true,

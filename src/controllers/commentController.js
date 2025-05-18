@@ -2,9 +2,11 @@ const Comment = require('../models/Comment');
 
 exports.getComments = async (req, res) => {
   try {
-    const blogPostId = req.params.blogPostId;    const comments = await Comment.find({ blogPostId })
+    const blogPostId = req.params.blogPostId;
+    const comments = await Comment.find({ blogPostId })
       .sort({ createdAt: -1 })
-      .lean();    res.status(200).json(comments);
+      .lean();
+    res.status(200).json(comments);
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).json({ message: 'Error fetching comments', error: error.message });
@@ -15,14 +17,27 @@ exports.getComments = async (req, res) => {
 exports.createComment = async (req, res) => {
   try {
     const { blogPostId } = req.params;
-    const { author, content } = req.body;
+    const { author, content, replyTo } = req.body;
 
     if (!author || !content) {
       return res.status(400).json({ message: 'Author and content are required' });
+    }    // If this is a reply, verify the parent comment exists
+    if (replyTo) {
+      const parentComment = await Comment.findOne({
+        _id: replyTo,
+        blogPostId
+      });
+
+      if (!parentComment) {
+        return res.status(404).json({
+          message: 'Parent comment not found or does not belong to this blog post'
+        });
+      }
     }    const comment = new Comment({
       blogPostId,
       author,
-      content
+      content,
+      replyTo
     });    await comment.save();
     const commentResponse = comment.toObject();
     // Make sure deleteKey is included in the response
@@ -49,9 +64,6 @@ exports.deleteComment = async (req, res) => {
 
     if (!deleteKey || comment.deleteKey !== deleteKey) {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
-    }
-    if (comment.deleteKey !== deleteKey) {
-      return res.status(403).json({ message: 'Invalid delete key' });
     }    await Comment.findByIdAndDelete(commentId);
     res.status(200).json({ message: 'Comment deleted successfully' });
   } catch (error) {
