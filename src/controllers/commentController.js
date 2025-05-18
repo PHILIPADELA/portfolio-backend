@@ -4,8 +4,7 @@ exports.getComments = async (req, res) => {
   try {
     const blogPostId = req.params.blogPostId;    const comments = await Comment.find({ blogPostId })
       .sort({ createdAt: -1 })
-      .lean(); 
-    res.json(comments);
+      .lean();    res.status(200).json(comments);
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).json({ message: 'Error fetching comments', error: error.message });
@@ -30,8 +29,7 @@ exports.createComment = async (req, res) => {
     if (!commentResponse.deleteKey) {
       console.error('DeleteKey not generated for comment:', commentResponse);
       return res.status(500).json({ message: 'Error creating comment: No delete key generated' });
-    }
-    console.log('Created comment with deleteKey:', commentResponse.deleteKey);
+    }    console.log('Created comment with deleteKey:', commentResponse.deleteKey);
     res.status(201).json(commentResponse);
   } catch (error) {
     console.error('Error creating comment:', error);
@@ -54,10 +52,8 @@ exports.deleteComment = async (req, res) => {
     }
     if (comment.deleteKey !== deleteKey) {
       return res.status(403).json({ message: 'Invalid delete key' });
-    }
-
-    await Comment.findByIdAndDelete(commentId);
-    res.json({ message: 'Comment deleted successfully' });
+    }    await Comment.findByIdAndDelete(commentId);
+    res.status(200).json({ message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
     res.status(500).json({ message: 'Error deleting comment', error: error.message });

@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const commentController = require('../controllers/commentController');
-const auth = require('../middleware/auth');
+const cors = require('cors');
 
+// Apply CORS to all comment routes
+router.use(cors());
 
 // Get all comments for a blog post
 router.get('/blog/:blogPostId/comments', commentController.getComments);

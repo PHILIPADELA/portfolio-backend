@@ -20,29 +20,34 @@ const commentRoutes = require('./routes/commentRoutes');
 
 const app = express();
 
+
+app.use(cors({
+  origin: [
+    'https://portfolio-frontend-wheat-ten.vercel.app',
+    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
+    'http://localhost:2000',
+    'http://localhost:5173'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
-app.use(cors({
-  origin: [
-    'https://portfolio-frontend-wheat-ten.vercel.app',
-    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
-    'http://localhost:2000'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+app.options('*', cors());
 
-// Handle preflight requests for file uploads
-app.options('/api/blog', cors());
 
-// Custom middleware to handle multipart requests
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 app.use('/api/blog', (req, res, next) => {
   if (req.method === 'POST' || req.method === 'PUT') {
     if (req.headers['content-type']?.startsWith('multipart/form-data')) {
@@ -52,18 +57,18 @@ app.use('/api/blog', (req, res, next) => {
   express.json()(req, res, next);
 });
 
-// Rate limiting
+
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
 app.use(limiter);
 
-// Body parser middleware
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files with CORS headers
+
 app.use('/uploads', (req, res, next) => {
   const filePath = path.join(__dirname, '../uploads', req.url);
   console.log('Static file request received:', {
@@ -72,20 +77,18 @@ app.use('/uploads', (req, res, next) => {
     exists: fs.existsSync(filePath)
   });
 
-  // Ensure uploads directory exists
+
   const uploadsDir = path.join(__dirname, '../uploads/blog');
   if (!fs.existsSync(uploadsDir)) {
     console.log('Creating uploads directory:', uploadsDir);
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Set CORS headers
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
 
-  // If file doesn't exist, return 404 with helpful message
   if (!fs.existsSync(filePath)) {
     console.error('File not found:', filePath);
     return res.status(404).json({
@@ -98,7 +101,7 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '../uploads'), {
   setHeaders: (res, filePath) => {
-    // Set content type based on file extension
+
     const ext = path.extname(filePath).toLowerCase();
     let contentType = 'application/octet-stream';
     
@@ -108,11 +111,10 @@ app.use('/uploads', (req, res, next) => {
     
     console.log('Serving file:', filePath, 'with content-type:', contentType);
     res.set('Content-Type', contentType);
-    res.set('Cache-Control', 'public, max-age=31557600');  // Cache for 1 year
+    res.set('Cache-Control', 'public, max-age=31557600'); 
   }
 }));
 
-// Debug endpoint to check image paths
 app.get('/debug/images', (req, res) => {
   const uploadsPath = path.join(__dirname, '../uploads/blog');
   fs.readdir(uploadsPath, (err, files) => {
@@ -127,20 +129,19 @@ app.get('/debug/images', (req, res) => {
   });
 });
 
-// Routes
+
 app.use('/api/contact', contactRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api', commentRoutes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something broke!', error: err.message });
 });
 
-// Connect to MongoDB
+
 mongoose.connect(config.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -153,7 +154,7 @@ mongoose.connect(config.MONGODB_URI)
     process.exit(1);
   });
 
-// Graceful shutdown
+
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   mongoose.connection.close(false)
