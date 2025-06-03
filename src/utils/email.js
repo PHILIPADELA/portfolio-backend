@@ -15,12 +15,12 @@ const createTransporter = () => {
       ciphers:'SSLv3',
       minVersion: 'TLSv1.2'
     },
-    // Debug options
+   
     debug: true,
     logger: true
   });
 
-  // Verify SMTP connection configuration
+ 
   transporter.verify(function(error, success) {
     if (error) {
       console.error('SMTP connection error:', error);
@@ -38,9 +38,9 @@ const sendMail = async (options) => {
     const mailOptions = {
       from: `"Portfolio Contact" <${config.EMAIL_USER}>`,
       ...options,
-      // Set a connection timeout of 10 seconds
+     
       connectionTimeout: 10000,
-      // Set a socket timeout of 20 seconds
+     
       socketTimeout: 20000
     };
 

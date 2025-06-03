@@ -4,7 +4,7 @@ const router = express.Router();
 const contactController = require('../controllers/contactController');
 const validate = require('../middleware/validate');
 
-// Validation rules for contact form
+
 const contactValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Must be a valid email address'),

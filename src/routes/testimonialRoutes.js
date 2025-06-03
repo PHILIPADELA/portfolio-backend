@@ -4,7 +4,7 @@ const router = express.Router();
 const testimonialController = require('../controllers/testimonialController');
 const validate = require('../middleware/validate');
 
-// Validation rules for testimonials
+
 const testimonialValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('position').trim().notEmpty().withMessage('Position is required'),

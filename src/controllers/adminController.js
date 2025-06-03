@@ -8,19 +8,19 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Find admin user
+   
     const admin = await Admin.findOne({ username });
     if (!admin) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
+    
     const isMatch = await admin.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate token
+    
     const token = jwt.sign(
       { id: admin._id },
       config.JWT_SECRET,

@@ -25,7 +25,7 @@ exports.createComment = async (req, res) => {
 
     let parentAuthor = null;
     
-    // If this is a reply, verify the parent comment exists and get its author
+    
     if (replyTo) {
       const parentComment = await Comment.findOne({
         _id: replyTo,
@@ -46,7 +46,7 @@ exports.createComment = async (req, res) => {
       author,
       content,
       replyTo,
-      parentAuthor // Save the parent author's name
+      parentAuthor
     });
     
     await comment.save();
@@ -79,9 +79,9 @@ exports.deleteComment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
     
-    // Also delete any replies to this comment
+   
     await Comment.deleteMany({ replyTo: commentId });
-    // Delete the comment itself
+   
     await Comment.findByIdAndDelete(commentId);
     
     res.status(200).json({ message: 'Comment deleted successfully' });

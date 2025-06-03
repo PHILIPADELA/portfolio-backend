@@ -8,10 +8,10 @@ const config = require('./config/config');
 const ensureUploadDirectories = require('./utils/ensureDirectories');
 const fs = require('fs');
 
-// Create required directories
+
 ensureUploadDirectories();
 
-// Import routes
+
 const contactRoutes = require('./routes/contactRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -35,7 +35,7 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Security middleware
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false

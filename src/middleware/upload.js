@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 
-// Configure multer for blog images
+
 const blogStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../../uploads/blog'));
@@ -12,10 +12,10 @@ const blogStorage = multer.diskStorage({
   }
 });
 
-// Configure multer settings
+
 const upload = multer({
   storage: blogStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());

@@ -47,7 +47,7 @@ const blogPostSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt timestamp before saving
+
 blogPostSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();

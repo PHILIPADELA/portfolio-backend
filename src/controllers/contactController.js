@@ -4,7 +4,7 @@ exports.submitContact = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    // Create new contact entry
+    
     const contact = new Contact({
       name,
       email,
@@ -12,7 +12,7 @@ exports.submitContact = async (req, res) => {
       message
     });
 
-    // Save to database
+    
     await contact.save();
 
     res.status(201).json({ message: 'Message received successfully' });

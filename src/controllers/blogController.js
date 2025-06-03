@@ -2,7 +2,7 @@ const BlogPost = require('../models/BlogPost');
 const path = require('path');
 const fs = require('fs').promises;
 
-// Get all blog posts
+
 exports.getAllPosts = async (req, res) => {
   try {
     const posts = await BlogPost.find()
@@ -14,7 +14,6 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
-// Get a single blog post by ID
 exports.getPost = async (req, res) => {
   try {
     console.log('Getting post with ID:', req.params.id);
@@ -31,13 +30,12 @@ exports.getPost = async (req, res) => {
   }
 };
 
-// Create a new blog post
 exports.createPost = async (req, res) => {
   try {
     console.log('Create post request body:', req.body);
     console.log('Create post request file:', req.file);
 
-    // Validate required fields
+   
     const requiredFields = ['title', 'excerpt', 'content', 'category', 'author', 'readTime'];
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
@@ -80,7 +78,7 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// Update a blog post
+
 exports.updatePost = async (req, res) => {  try {
     console.log('Update request received:', {
       body: req.body,
@@ -90,7 +88,7 @@ exports.updatePost = async (req, res) => {  try {
 
     const postId = req.params.id;
     
-    // Find the existing post first
+   
     const existingPost = await BlogPost.findById(postId);
     if (!existingPost) {
       return res.status(404).json({ message: 'Blog post not found' });
@@ -98,9 +96,9 @@ exports.updatePost = async (req, res) => {  try {
 
     const updateData = { ...req.body };
     
-    // Handle image update
+   
     if (req.file) {
-      // Delete old image if it exists
+      
       if (existingPost.image) {
         const oldImagePath = path.join(__dirname, '../../', existingPost.image);
         try {
@@ -108,16 +106,16 @@ exports.updatePost = async (req, res) => {  try {
           console.log(`Deleted old image: ${oldImagePath}`);
         } catch (err) {
           console.error('Error deleting old image:', err);
-          // Continue with update even if old image deletion fails
+          
         }
       }
       updateData.image = `/uploads/blog/${req.file.filename}`;
     }
 
-    // Handle tags field
+    
     try {
       if (updateData.tags) {
-        // Check if tags is already an array
+        
         updateData.tags = typeof updateData.tags === 'string' 
           ? JSON.parse(updateData.tags)
           : updateData.tags;
@@ -142,7 +140,7 @@ exports.updatePost = async (req, res) => {  try {
   }
 };
 
-// Delete a blog post
+
 exports.deletePost = async (req, res) => {
   try {
     const post = await BlogPost.findById(req.params.id);
@@ -150,7 +148,7 @@ exports.deletePost = async (req, res) => {
       return res.status(404).json({ message: 'Blog post not found' });
     }
 
-    // Delete the image file if it exists
+    
     if (post.image) {
       const imagePath = path.join(__dirname, '../../', post.image);
       try {
@@ -158,7 +156,7 @@ exports.deletePost = async (req, res) => {
         console.log(`Deleted image file: ${imagePath}`);
       } catch (err) {
         console.error('Error deleting image file:', err);
-        // Continue with post deletion even if image deletion fails
+        
       }
     }
 

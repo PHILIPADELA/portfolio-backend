@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 
-// Configure storage
+
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadPath = path.join(__dirname, '../../uploads/blog');
@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter
+
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -48,14 +48,13 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer
+
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   fileFilter
 });
 
-// Middleware to handle image upload
 const handleImageUpload = (req, res, next) => {
   console.log('Starting image upload...');
   console.log('Content-Type:', req.headers['content-type']);
