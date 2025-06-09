@@ -60,7 +60,8 @@ app.use('/api/blog', (req, res, next) => {
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 1,
+  message: 'Too many requests from this IP, please try again later.',
 });
 app.use(limiter);
 
