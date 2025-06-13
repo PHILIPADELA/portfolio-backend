@@ -167,3 +167,60 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ message: 'Error deleting blog post', error: error.message });
   }
 };
+
+exports.toggleReaction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reactionType, userId } = req.body;
+
+    if (!['like', 'love', 'wow', 'sad'].includes(reactionType)) {
+      return res.status(400).json({ message: 'Invalid reaction type' });
+    }
+
+    const post = await BlogPost.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Blog post not found' });
+    }
+
+   
+    if (!post.reactions) {
+      post.reactions = {
+        like: [],
+        love: [],
+        wow: [],
+        sad: []
+      };
+    }
+
+   
+    const reactionArray = post.reactions[reactionType];
+    const userIndex = reactionArray.indexOf(userId);
+
+    if (userIndex === -1) {
+     
+      reactionArray.push(userId);
+      
+     
+      Object.keys(post.reactions).forEach(type => {
+        if (type !== reactionType) {
+          const index = post.reactions[type].indexOf(userId);
+          if (index !== -1) {
+            post.reactions[type].splice(index, 1);
+          }
+        }
+      });
+    } else {
+      
+      reactionArray.splice(userIndex, 1);
+    }
+
+    const updatedPost = await post.save();
+    res.json({
+      message: 'Reaction updated successfully',
+      reactions: updatedPost.reactions
+    });
+  } catch (error) {
+    console.error('Error updating reaction:', error);
+    res.status(500).json({ message: 'Error updating reaction', error: error.message });
+  }
+};

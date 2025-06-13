@@ -37,6 +37,24 @@ const blogPostSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  reactions: {
+    like: [{
+      type: String, 
+      required: true
+    }],
+    love: [{
+      type: String,
+      required: true
+    }],
+    wow: [{
+      type: String,
+      required: true
+    }],
+    sad: [{
+      type: String,
+      required: true
+    }]
+  },
   createdAt: {
     type: Date,
     default: Date.now
