@@ -175,13 +175,13 @@ exports.deletePost = async (req, res) => {
 exports.toggleReaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, userId } = req.body;
+    const { reactionType, userId } = req.body;
 
-    if (!type || !userId) {
+    if (!reactionType || !userId) {
       return res.status(400).json({ message: 'Reaction type and userId are required' });
     }
 
-    if (!['like', 'love', 'wow', 'sad'].includes(type)) {
+    if (!['like', 'love', 'wow', 'sad'].includes(reactionType)) {
       return res.status(400).json({ message: 'Invalid reaction type' });
     }
 
@@ -190,14 +190,14 @@ exports.toggleReaction = async (req, res) => {
       return res.status(404).json({ message: 'Blog post not found' });
     }
 
-    const hasReacted = post.reactions[type].includes(userId);
+    const hasReacted = post.reactions[reactionType].includes(userId);
     
     if (hasReacted) {
      
-      post.reactions[type] = post.reactions[type].filter(id => id !== userId);
+      post.reactions[reactionType] = post.reactions[reactionType].filter(id => id !== userId);
     } else {
       
-      post.reactions[type].push(userId);
+      post.reactions[reactionType].push(userId);
     }
 
     await post.save();
