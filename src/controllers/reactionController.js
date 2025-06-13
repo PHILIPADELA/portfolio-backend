@@ -1,10 +1,11 @@
 const BlogPost = require('../models/BlogPost');
 
 exports.toggleReaction = async (req, res) => {
-  try {
-    console.log('Reaction request received:', {
+  try {    console.log('Reaction request received:', {
       params: req.params,
-      body: req.body
+      body: req.body,
+      url: req.originalUrl,
+      method: req.method
     });
 
     const { postId } = req.params;
