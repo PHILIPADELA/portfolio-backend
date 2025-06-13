@@ -175,9 +175,13 @@ exports.deletePost = async (req, res) => {
 exports.toggleReaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reactionType, userId } = req.body;
+    const { type, userId } = req.body;
 
-    if (!['like', 'love', 'wow', 'sad'].includes(reactionType)) {
+    if (!type || !userId) {
+      return res.status(400).json({ message: 'Reaction type and userId are required' });
+    }
+
+    if (!['like', 'love', 'wow', 'sad'].includes(type)) {
       return res.status(400).json({ message: 'Invalid reaction type' });
     }
 
@@ -186,45 +190,24 @@ exports.toggleReaction = async (req, res) => {
       return res.status(404).json({ message: 'Blog post not found' });
     }
 
-   
-    if (!post.reactions) {
-      post.reactions = {
-        like: [],
-        love: [],
-        wow: [],
-        sad: []
-      };
-    }
-
-   
-    const reactionArray = post.reactions[reactionType];
-    const userIndex = reactionArray.indexOf(userId);
-
-    if (userIndex === -1) {
+    const hasReacted = post.reactions[type].includes(userId);
+    
+    if (hasReacted) {
      
-      reactionArray.push(userId);
-      
-     
-      Object.keys(post.reactions).forEach(type => {
-        if (type !== reactionType) {
-          const index = post.reactions[type].indexOf(userId);
-          if (index !== -1) {
-            post.reactions[type].splice(index, 1);
-          }
-        }
-      });
+      post.reactions[type] = post.reactions[type].filter(id => id !== userId);
     } else {
       
-      reactionArray.splice(userIndex, 1);
+      post.reactions[type].push(userId);
     }
 
-    const updatedPost = await post.save();
+    await post.save();
+
     res.json({
-      message: 'Reaction updated successfully',
-      reactions: updatedPost.reactions
+      message: hasReacted ? 'Reaction removed' : 'Reaction added',
+      reactions: post.reactions
     });
   } catch (error) {
-    console.error('Error updating reaction:', error);
-    res.status(500).json({ message: 'Error updating reaction', error: error.message });
+    console.error('Error handling reaction:', error);
+    res.status(500).json({ message: 'Error handling reaction', error: error.message });
   }
 };
