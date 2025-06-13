@@ -25,7 +25,9 @@ const app = express();
 app.use(cors({
   origin: [
     'https://portfolio-frontend-wheat-ten.vercel.app',
-    'http://localhost:2000'
+    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
+    'http://localhost:2000',
+    'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -59,7 +61,7 @@ app.use('/api/blog', (req, res, next) => {
 
 const limiter = rateLimit({
   windowMs: 3 * 60 * 1000,
-  max: 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use(limiter);
@@ -135,7 +137,7 @@ app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', commentRoutes);  
 app.use('/api/blog', blogRoutes);
-app.use('/api/reactions', reactionRoutes);
+app.use('/api/reactions', express.json(), reactionRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
