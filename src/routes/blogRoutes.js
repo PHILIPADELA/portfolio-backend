@@ -25,6 +25,5 @@ router.post('/', auth, handleImageUpload, blogController.createPost);
 router.put('/:id', auth, handleImageUpload, blogController.updatePost);
 router.delete('/:id', auth, blogController.deletePost);
 router.post('/:id/reactions', blogController.toggleReaction);
-router.post('/:id/reactions', blogController.toggleReaction);
 
 module.exports = router;
