@@ -17,6 +17,7 @@ const testimonialRoutes = require('./routes/testimonialRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const reactionRoutes = require('./routes/reactionRoutes');
 
 const app = express();
 
@@ -24,9 +25,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://portfolio-frontend-wheat-ten.vercel.app',
-    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
-    'http://localhost:2000',
-    'http://localhost:5173'
+    'http://localhost:2000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -136,6 +135,7 @@ app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', commentRoutes);  
 app.use('/api/blog', blogRoutes);
+app.use('/api/reactions', reactionRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
