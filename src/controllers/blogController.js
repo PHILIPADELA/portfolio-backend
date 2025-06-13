@@ -57,9 +57,7 @@ exports.createPost = async (req, res) => {
       tags,
       author,
       readTime
-    } = req.body;
-
-    const blogPost = new BlogPost({
+    } = req.body;    const blogPost = new BlogPost({
       title,
       excerpt,
       content,
@@ -67,7 +65,13 @@ exports.createPost = async (req, res) => {
       category,
       tags: tags ? JSON.parse(tags) : [],
       author,
-      readTime
+      readTime,
+      reactions: {
+        like: [],
+        love: [],
+        wow: [],
+        sad: []
+      }
     });
 
     await blogPost.save();
