@@ -2,7 +2,19 @@ const BlogPost = require('../models/BlogPost');
 const PostView = require('../models/PostView');
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 
+// Helper function to generate session ID
+const generateSessionId = (ip, userAgent) => {
+  const data = `${ip}-${userAgent}-${Date.now()}`;
+  return crypto.createHash('md5').update(data).digest('hex');
+};
+
+// Helper function to update view count
+const updateViewCount = async (postId) => {
+  const viewCount = await PostView.countDocuments({ postId });
+  await BlogPost.findByIdAndUpdate(postId, { views: viewCount });
+};
 
 exports.getAllPosts = async (req, res) => {
   try {
@@ -26,29 +38,31 @@ exports.getPost = async (req, res) => {
     }
 
    
-    const visitorId = req.headers['X-Visitor-ID'];
-    
-    if (visitorId) {
-      try {
-        
-        await PostView.findOneAndUpdate(
-          { postId: post._id, visitorId },
-          { lastViewed: new Date() },
-          { upsert: true, new: true }
-        );
+    const ip = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const sessionId = req.session?.id || generateSessionId(ip, userAgent);
 
-       
-        const viewCount = await PostView.countDocuments({ postId: post._id });
-        post.views = viewCount;
-        await post.save();
-      } catch (error) {
-        console.error('Error tracking view:', error);
-       
+   
+    try {
+      await new PostView({
+        postId: post._id,
+        ipAddress: ip,
+        userAgent: userAgent,
+        sessionId: sessionId
+      }).save();
+
+     
+      await updateViewCount(post._id);
+    } catch (viewError) {
+      
+      if (viewError.code !== 11000) {
+        console.error('Error recording view:', viewError);
       }
     }
 
-    console.log('Found post:', post);
-    res.json(post);
+    
+    const updatedPost = await BlogPost.findById(req.params.id);
+    res.json(updatedPost);
   } catch (error) {
     console.error('Error fetching blog post:', error);
     res.status(500).json({ message: 'Error fetching blog post', error: error.message });

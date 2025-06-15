@@ -1,22 +1,32 @@
 const mongoose = require('mongoose');
 
-const postViewModel = new mongoose.Schema({
+const postViewSchema = new mongoose.Schema({
   postId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BlogPost',
     required: true
   },
-  visitorId: {
+  ipAddress: {
     type: String,
     required: true
   },
-  lastViewed: {
+  userAgent: {
+    type: String,
+    required: true
+  },
+  sessionId: {
+    type: String,
+    required: true
+  },
+  timestamp: {
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
 
 
-postViewModel.index({ postId: 1, visitorId: 1 }, { unique: true });
+postViewSchema.index({ postId: 1, ipAddress: 1, sessionId: 1 }, { unique: true });
 
-module.exports = mongoose.model('PostView', postViewModel);
+const PostView = mongoose.model('PostView', postViewSchema);
+
+module.exports = PostView;
