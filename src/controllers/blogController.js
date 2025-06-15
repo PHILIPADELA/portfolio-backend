@@ -1,20 +1,7 @@
 const BlogPost = require('../models/BlogPost');
-const PostView = require('../models/PostView');
 const path = require('path');
 const fs = require('fs').promises;
-const crypto = require('crypto');
 
-// Helper function to generate session ID
-const generateSessionId = (ip, userAgent) => {
-  const data = `${ip}-${userAgent}-${Date.now()}`;
-  return crypto.createHash('md5').update(data).digest('hex');
-};
-
-// Helper function to update view count
-const updateViewCount = async (postId) => {
-  const viewCount = await PostView.countDocuments({ postId });
-  await BlogPost.findByIdAndUpdate(postId, { views: viewCount });
-};
 
 exports.getAllPosts = async (req, res) => {
   try {
@@ -30,39 +17,17 @@ exports.getAllPosts = async (req, res) => {
 exports.getPost = async (req, res) => {
   try {
     console.log('Getting post with ID:', req.params.id);
-    const post = await BlogPost.findById(req.params.id);
-    
+    const post = await BlogPost.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
     if (!post) {
       console.log('Post not found');
       return res.status(404).json({ message: 'Blog post not found' });
     }
-
-   
-    const ip = req.ip || req.connection.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-    const sessionId = req.session?.id || generateSessionId(ip, userAgent);
-
-   
-    try {
-      await new PostView({
-        postId: post._id,
-        ipAddress: ip,
-        userAgent: userAgent,
-        sessionId: sessionId
-      }).save();
-
-     
-      await updateViewCount(post._id);
-    } catch (viewError) {
-      
-      if (viewError.code !== 11000) {
-        console.error('Error recording view:', viewError);
-      }
-    }
-
-    
-    const updatedPost = await BlogPost.findById(req.params.id);
-    res.json(updatedPost);
+    console.log('Found post:', post);
+    res.json(post);
   } catch (error) {
     console.error('Error fetching blog post:', error);
     res.status(500).json({ message: 'Error fetching blog post', error: error.message });
