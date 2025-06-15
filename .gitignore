@@ -2,4 +2,3 @@ node_modules/
 .env
 uploads/*
 !uploads/.gitkeep
-config/config.js
