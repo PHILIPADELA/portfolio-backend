@@ -1,4 +1,5 @@
 const BlogPost = require('../models/BlogPost');
+const PostView = require('../models/PostView');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -17,15 +18,35 @@ exports.getAllPosts = async (req, res) => {
 exports.getPost = async (req, res) => {
   try {
     console.log('Getting post with ID:', req.params.id);
-    const post = await BlogPost.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { views: 1 } },
-      { new: true }
-    );
+    const post = await BlogPost.findById(req.params.id);
+    
     if (!post) {
       console.log('Post not found');
       return res.status(404).json({ message: 'Blog post not found' });
     }
+
+   
+    const visitorId = req.headers['X-Visitor-ID'];
+    
+    if (visitorId) {
+      try {
+        
+        await PostView.findOneAndUpdate(
+          { postId: post._id, visitorId },
+          { lastViewed: new Date() },
+          { upsert: true, new: true }
+        );
+
+       
+        const viewCount = await PostView.countDocuments({ postId: post._id });
+        post.views = viewCount;
+        await post.save();
+      } catch (error) {
+        console.error('Error tracking view:', error);
+       
+      }
+    }
+
     console.log('Found post:', post);
     res.json(post);
   } catch (error) {
