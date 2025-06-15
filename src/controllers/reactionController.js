@@ -34,12 +34,16 @@ exports.toggleReaction = async (req, res) => {
       userId,
       currentReactions: post.reactions[reactionType]
     });
-    
-    if (hasReacted) {
+      if (hasReacted) {
       console.log('Removing reaction');
       post.reactions[reactionType] = post.reactions[reactionType].filter(id => id !== userId);
     } else {
       console.log('Adding reaction');
+      
+      Object.keys(post.reactions).forEach(type => {
+        post.reactions[type] = post.reactions[type].filter(id => id !== userId);
+      });
+     
       post.reactions[reactionType].push(userId);
     }
 
