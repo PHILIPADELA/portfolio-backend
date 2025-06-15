@@ -37,6 +37,10 @@ const blogPostSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  views: {
+    type: Number,
+    default: 0
+  },
   reactions: {
     like: [{
       type: String, 
@@ -47,6 +51,10 @@ const blogPostSchema = new mongoose.Schema({
       required: true
     }],
     wow: [{
+      type: String,
+      required: true
+    }],
+    sad: [{
       type: String,
       required: true
     }],

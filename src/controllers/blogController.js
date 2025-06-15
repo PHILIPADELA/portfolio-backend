@@ -17,7 +17,11 @@ exports.getAllPosts = async (req, res) => {
 exports.getPost = async (req, res) => {
   try {
     console.log('Getting post with ID:', req.params.id);
-    const post = await BlogPost.findById(req.params.id);
+    const post = await BlogPost.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
     if (!post) {
       console.log('Post not found');
       return res.status(404).json({ message: 'Blog post not found' });

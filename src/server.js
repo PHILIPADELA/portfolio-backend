@@ -25,9 +25,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://portfolio-frontend-wheat-ten.vercel.app',
-    'https://portfolio-frontend-3wb8681ls-philips-projects-67e054df.vercel.app',
-    'http://localhost:2000',
-    'http://localhost:5173'
+    'http://localhost:2000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
