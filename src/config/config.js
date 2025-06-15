@@ -7,9 +7,15 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'production',
   CLIENT_URL: process.env.CLIENT_URL || 'https://portfolio-frontend-wheat-ten.vercel.app',
   
- 
-  EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  EMAIL_PORT: process.env.EMAIL_PORT || 587,
+  
+  EMAIL_HOST: 'smtp.gmail.com',
+  EMAIL_PORT: 587,
   EMAIL_USER: process.env.EMAIL_USER || 'adeyekunadelola0@gmail.com',
-  EMAIL_PASS: process.env.EMAIL_PASS 
+  
+  
+  
+  GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID || '149049357105-r7lfc3ffql678h2od860jmsba9au0ltv.apps.googleusercontent.com',
+  GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET || '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',
+  GMAIL_REDIRECT_URI: process.env.GMAIL_REDIRECT_URI || 'https://developers.google.com/oauthplayground',
+  GMAIL_REFRESH_TOKEN: process.env.GMAIL_REFRESH_TOKEN
 };

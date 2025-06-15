@@ -1,61 +1,69 @@
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
 const config = require('../config/config');
 
-const createTransporter = () => {
-  const transporter = nodemailer.createTransport({
-    host: config.EMAIL_HOST,
-    port: parseInt(config.EMAIL_PORT),
-    secure: false,
-    auth: {
-      user: config.EMAIL_USER,
-      pass: config.EMAIL_PASS
-    },
-    tls: {
-      rejectUnauthorized: true,
-      ciphers:'SSLv3',
-      minVersion: 'TLSv1.2'
-    },
-   
-    debug: true,
-    logger: true
-  });
-
+const createTransporter = async () => {
  
-  transporter.verify(function(error, success) {
-    if (error) {
-      console.error('SMTP connection error:', error);
-    } else {
-      console.log('Server is ready to take our messages');
-    }
+  const oauth2Client = new google.auth.OAuth2(
+    config.GMAIL_CLIENT_ID,
+    config.GMAIL_CLIENT_SECRET,
+    config.GMAIL_REDIRECT_URI
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: config.GMAIL_REFRESH_TOKEN
   });
 
-  return transporter;
+  try {
+    
+    const accessToken = await oauth2Client.getAccessToken();
+
+   
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: config.EMAIL_USER,
+        clientId: config.GMAIL_CLIENT_ID,
+        clientSecret: config.GMAIL_CLIENT_SECRET,
+        refreshToken: config.GMAIL_REFRESH_TOKEN,
+        accessToken: accessToken.token
+      },
+      debug: true,
+      logger: true
+    });
+
+    
+    transporter.verify(function(error, success) {
+      if (error) {
+        console.error('SMTP connection error:', error);
+      } else {
+        console.log('Server is ready to take our messages');
+      }
+    });
+
+    return transporter;
+  } catch (error) {
+    console.error('Error creating transporter:', error);
+    throw error;
+  }
 };
 
 const sendMail = async (options) => {
-  const transporter = createTransporter();
   try {
+    const transporter = await createTransporter();
     const mailOptions = {
       from: `"Portfolio Contact" <${config.EMAIL_USER}>`,
       ...options,
-     
       connectionTimeout: 10000,
-     
       socketTimeout: 20000
     };
 
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Email sending error details:', {
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
-      responseCode: error.responseCode,
-      stack: error.stack
-    });
-    return false;
+    console.error('Email sending error details:', error);
+    throw error;
   }
 };
 
