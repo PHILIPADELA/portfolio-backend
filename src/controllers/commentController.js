@@ -4,10 +4,29 @@ exports.getComments = async (req, res) => {
   try {
     const blogPostId = req.params.blogPostId;
     const comments = await Comment.find({ blogPostId })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 }) // oldest first for threading
       .lean();
-    
-    res.status(200).json(comments);
+
+    // Build a map of comments by _id
+    const commentMap = {};
+    comments.forEach(comment => {
+      comment.replies = [];
+      comment._id = comment._id.toString();
+      if (comment.replyTo) comment.replyTo = comment.replyTo.toString();
+      commentMap[comment._id] = comment;
+    });
+
+    // Build the tree
+    const roots = [];
+    comments.forEach(comment => {
+      if (comment.replyTo && commentMap[comment.replyTo]) {
+        commentMap[comment.replyTo].replies.push(comment);
+      } else {
+        roots.push(comment);
+      }
+    });
+
+    res.status(200).json(roots);
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).json({ message: 'Error fetching comments', error: error.message });
