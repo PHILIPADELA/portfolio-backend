@@ -4,10 +4,9 @@ exports.getComments = async (req, res) => {
   try {
     const blogPostId = req.params.blogPostId;
     const comments = await Comment.find({ blogPostId })
-      .sort({ createdAt: 1 }) // oldest first for threading
+      .sort({ createdAt: -1 }) 
       .lean();
 
-    // Build a map of comments by _id
     const commentMap = {};
     comments.forEach(comment => {
       comment.replies = [];
@@ -16,7 +15,6 @@ exports.getComments = async (req, res) => {
       commentMap[comment._id] = comment;
     });
 
-    // Build the tree
     const roots = [];
     comments.forEach(comment => {
       if (comment.replyTo && commentMap[comment.replyTo]) {
