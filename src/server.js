@@ -25,7 +25,8 @@ const app = express();
 app.use(cors({
   origin: [
     'https://portfolio-frontend-wheat-ten.vercel.app',
-    'http://localhost:2000'
+    'http://localhost:2000',
+    'https://adelaportfolio.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
