@@ -1,6 +1,7 @@
 const BlogPost = require('../models/BlogPost');
 const path = require('path');
 const fs = require('fs').promises;
+const cloudinary = require('../utils/cloudinary');
 
 
 exports.getAllPosts = async (req, res) => {
@@ -53,6 +54,19 @@ exports.createPost = async (req, res) => {
       return res.status(400).json({ message: 'Image is required' });
     }
 
+    // Upload image to Cloudinary
+    let imageUrl = '';
+    try {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'blog'
+      });
+      imageUrl = result.secure_url;
+      // Remove local file after upload
+      await fs.unlink(req.file.path);
+    } catch (err) {
+      return res.status(500).json({ message: 'Cloudinary upload failed', error: err.message });
+    }
+
     const {
       title,
       excerpt,
@@ -61,11 +75,12 @@ exports.createPost = async (req, res) => {
       tags,
       author,
       readTime
-    } = req.body;    const blogPost = new BlogPost({
+    } = req.body;
+    const blogPost = new BlogPost({
       title,
       excerpt,
       content,
-      image: `/uploads/blog/${req.file.filename}`,
+      image: imageUrl,
       category,
       tags: tags ? JSON.parse(tags) : [],
       author,
@@ -106,18 +121,20 @@ exports.updatePost = async (req, res) => {  try {
     
    
     if (req.file) {
-      
-      if (existingPost.image) {
-        const oldImagePath = path.join(__dirname, '../../', existingPost.image);
-        try {
-          await fs.promises.unlink(oldImagePath);
-          console.log(`Deleted old image: ${oldImagePath}`);
-        } catch (err) {
-          console.error('Error deleting old image:', err);
-          
-        }
+      // Upload new image to Cloudinary
+      let imageUrl = '';
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'blog'
+        });
+        imageUrl = result.secure_url;
+        await fs.unlink(req.file.path);
+      } catch (err) {
+        console.error('Cloudinary upload failed:', err);
+        return res.status(500).json({ message: 'Cloudinary upload failed', error: err.message });
       }
-      updateData.image = `/uploads/blog/${req.file.filename}`;
+      // Optionally, you can delete the old image from Cloudinary if you store its public_id
+      updateData.image = imageUrl;
     }
 
     
