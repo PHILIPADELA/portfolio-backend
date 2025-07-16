@@ -22,7 +22,7 @@ const reactionRoutes = require('./routes/reactionRoutes');
 
 const app = express();
 // Trust proxy for correct client IP and rate limiting
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 
 app.use(cors({
