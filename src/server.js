@@ -19,7 +19,10 @@ const blogRoutes = require('./routes/blogRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const reactionRoutes = require('./routes/reactionRoutes');
 
+
 const app = express();
+// Trust proxy for correct client IP and rate limiting
+app.set('trust proxy', true);
 
 
 app.use(cors({
