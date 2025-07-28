@@ -20,7 +20,7 @@ This is the backend for Adela's portfolio website, built with Node.js, Express, 
 If you haven't already, clone this repository to your local machine:
 
 ```bash
-git clone https://github.com/GOALLINNOOUT/portfolio-backend.git
+git clone https://github.com/PHILIPADELA/portfolio-backend.git
 cd portfolio-backend
 ```
 
