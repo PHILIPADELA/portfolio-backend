@@ -5,11 +5,7 @@ const auth = require('../middleware/auth');
 
 
 router.post('/login', adminController.login);
-const adminController = require('../controllers/adminController');
 
-// ...existing admin routes...
-
-// TEMPORARY: Route to create an admin user
 router.post('/create', adminController.createAdmin);
 
 router.get('/testimonials', auth, adminController.getTestimonialsForApproval);
