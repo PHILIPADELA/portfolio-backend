@@ -6,7 +6,6 @@ const auth = require('../middleware/auth');
 
 router.post('/login', adminController.login);
 
-router.post('/create', adminController.createAdmin);
 
 router.get('/testimonials', auth, adminController.getTestimonialsForApproval);
 router.put('/testimonials/:id/approve', auth, adminController.approveTestimonial);
