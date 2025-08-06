@@ -24,7 +24,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: admin._id },
       config.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.json({ token });
@@ -85,5 +85,26 @@ exports.getContacts = async (req, res) => {
   } catch (error) {
     console.error('Error fetching contacts:', error);
     res.status(500).json({ message: 'Error fetching contacts', error: error.message });
+  }
+};
+
+// TEMPORARY: Admin creation endpoint. Remove or secure after first use!
+exports.createAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+    // Check if admin already exists
+    const existing = await Admin.findOne({ username });
+    if (existing) {
+      return res.status(409).json({ message: 'Admin already exists' });
+    }
+    const admin = new Admin({ username, password });
+    await admin.save();
+    res.status(201).json({ message: 'Admin created successfully' });
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
