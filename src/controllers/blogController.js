@@ -2,6 +2,7 @@ const BlogPost = require('../models/BlogPost');
 const path = require('path');
 const fs = require('fs').promises;
 const cloudinary = require('../utils/cloudinary');
+const probe = require('probe-image-size');
 
 
 exports.getAllPosts = async (req, res) => {
@@ -153,6 +154,20 @@ exports.renderSeo = async (req, res) => {
       imageUrl = `${host}${imageUrl}`;
     }
 
+    // best-effort: probe remote image for width/height/type
+    let imgMeta = {};
+    try {
+      const result = await probe(imageUrl);
+      if (result) {
+        imgMeta.width = result.width;
+        imgMeta.height = result.height;
+        imgMeta.type = result.type; // e.g., 'jpeg', 'png', 'webp'
+      }
+    } catch (err) {
+      // ignore probe failures; proceed without width/height/type
+      console.warn('Image probe failed for', imageUrl, err && err.message);
+    }
+
     const canonicalUrl = `${host}/blog/${post._id}`;
     const title = `${post.title || 'Blog Post'} - ADELA's Blog`;
     const description = post.excerpt || '';
@@ -164,7 +179,7 @@ exports.renderSeo = async (req, res) => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
-    const html = `<!doctype html>
+  const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -175,6 +190,9 @@ exports.renderSeo = async (req, res) => {
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:type" content="article" />
   <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+  ${imgMeta.width ? `<meta property="og:image:width" content="${String(imgMeta.width)}" />` : ''}
+  ${imgMeta.height ? `<meta property="og:image:height" content="${String(imgMeta.height)}" />` : ''}
+  ${imgMeta.type ? `<meta property="og:image:type" content="image/${escapeHtml(imgMeta.type)}" />` : ''}
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
