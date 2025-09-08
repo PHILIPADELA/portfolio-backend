@@ -18,6 +18,8 @@ const blogValidation = [
 
 
 router.get('/', blogController.getAllPosts);
+// SEO-friendly, server-rendered meta page for crawlers/sharing
+router.get('/seo/:id', blogController.renderSeo);
 router.get('/:id', blogController.getPost);
 
 

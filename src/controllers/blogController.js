@@ -137,6 +137,78 @@ exports.getPost = async (req, res) => {
   }
 };
 
+// Lightweight server-side SEO page for crawlers
+exports.renderSeo = async (req, res) => {
+  try {
+    const post = await BlogPost.findById(req.params.id).lean();
+    if (!post) {
+      return res.status(404).send('Blog post not found');
+    }
+
+    // build absolute image URL
+    const host = `${req.protocol}://${req.get('host')}`;
+    let imageUrl = post.image || '/uploads/blog/default.jpg';
+    if (!imageUrl.startsWith('http')) {
+      imageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+      imageUrl = `${host}${imageUrl}`;
+    }
+
+    const canonicalUrl = `${host}/blog/${post._id}`;
+    const title = `${post.title || 'Blog Post'} - ADELA's Blog`;
+    const description = post.excerpt || '';
+
+    const escapeHtml = (str = '') => String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}" />
+  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:description" content="${escapeHtml(description)}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:description" content="${escapeHtml(description)}" />
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
+  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+  <script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      headline: post.title,
+      description: post.excerpt,
+      image: imageUrl,
+      author: { '@type': 'Person', name: post.author || 'ADELA' },
+      datePublished: post.createdAt,
+      dateModified: post.updatedAt || post.createdAt,
+      publisher: { '@type': 'Organization', name: "ADELA's Blog" }
+    })}</script>
+</head>
+<body>
+  <h1>${escapeHtml(post.title || 'Blog Post')}</h1>
+  <p>${escapeHtml(post.excerpt || '')}</p>
+  <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(post.title || '')}" style="max-width:100%;height:auto" />
+</body>
+</html>`;
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (error) {
+    console.error('Error rendering SEO page:', error);
+    return res.status(500).send('Error rendering SEO page');
+  }
+};
+
 exports.createPost = async (req, res) => {
   try {
     console.log('Create post request body:', req.body);
