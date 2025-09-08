@@ -36,6 +36,18 @@ exports.getAllPosts = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
+    // Log helpful debug info to verify pagination behavior
+    console.log(`GET /api/blog page=${page} limit=${limit} returned=${posts.length} total=${total}`);
+
+    // Add pagination headers and expose them for CORS so frontends can read them
+    // X-Total-Count: total number of matching documents
+    // X-Page: current page
+    // X-Limit: page size
+    res.set('X-Total-Count', String(total));
+    res.set('X-Page', String(page));
+    res.set('X-Limit', String(limit));
+    res.set('Access-Control-Expose-Headers', 'X-Total-Count, X-Page, X-Limit');
+
     res.json({ posts, total, page, limit });
   } catch (error) {
     console.error('Error fetching blog posts:', error);
