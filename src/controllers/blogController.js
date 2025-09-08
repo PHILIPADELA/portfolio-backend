@@ -29,20 +29,81 @@ exports.getAllPosts = async (req, res) => {
     if (req.query.sortBy === 'title') {
       sort = { title: 1 };
     }
+    // If search is provided, attempt regex matches first and fall back to fuzzy Levenshtein matching
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+    // Levenshtein distance (iterative DP)
+    const levenshtein = (a = '', b = '') => {
+      a = String(a);
+      b = String(b);
+      const al = a.length;
+      const bl = b.length;
+      if (al === 0) return bl;
+      if (bl === 0) return al;
+      const v0 = new Array(bl + 1).fill(0).map((_, i) => i);
+      const v1 = new Array(bl + 1).fill(0);
+      for (let i = 0; i < al; i++) {
+        v1[0] = i + 1;
+        for (let j = 0; j < bl; j++) {
+          const cost = a[i].toLowerCase() === b[j].toLowerCase() ? 0 : 1;
+          v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+        }
+        for (let k = 0; k <= bl; k++) v0[k] = v1[k];
+      }
+      return v1[bl];
+    };
+
+    if (req.query.search) {
+      const q = String(req.query.search || '').trim();
+      const regex = new RegExp(escapeRegex(q), 'i');
+
+      // Fetch candidates that match category (if provided) and sort order
+      const candidates = await BlogPost.find(query).sort(sort).lean();
+
+      // Exact/substring matches first
+      let matched = candidates.filter(p => (
+        (p.title && regex.test(p.title)) ||
+        (p.excerpt && regex.test(p.excerpt)) ||
+        (p.content && regex.test(p.content))
+      ));
+
+      // If none or very few matches, do fuzzy matching using Levenshtein on title/excerpt
+      if (!matched.length) {
+        const threshold = Math.max(1, Math.floor(q.length * 0.35));
+        matched = candidates.filter(p => {
+          const title = p.title || '';
+          const excerpt = p.excerpt || '';
+          const dt = levenshtein(q, title);
+          const de = levenshtein(q, excerpt);
+          return dt <= threshold || de <= threshold;
+        });
+      }
+
+      const total = matched.length;
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      const paged = matched.slice(start, end);
+
+      console.log(`GET /api/blog search='${q}' page=${page} limit=${limit} returned=${paged.length} total=${total}`);
+
+      res.set('X-Total-Count', String(total));
+      res.set('X-Page', String(page));
+      res.set('X-Limit', String(limit));
+      res.set('Access-Control-Expose-Headers', 'X-Total-Count, X-Page, X-Limit');
+
+      return res.json({ posts: paged, total, page, limit });
+    }
+
+    // No search - use efficient DB pagination
     const total = await BlogPost.countDocuments(query);
     const posts = await BlogPost.find(query)
       .sort(sort)
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
-    // Log helpful debug info to verify pagination behavior
     console.log(`GET /api/blog page=${page} limit=${limit} returned=${posts.length} total=${total}`);
 
-    // Add pagination headers and expose them for CORS so frontends can read them
-    // X-Total-Count: total number of matching documents
-    // X-Page: current page
-    // X-Limit: page size
     res.set('X-Total-Count', String(total));
     res.set('X-Page', String(page));
     res.set('X-Limit', String(limit));
