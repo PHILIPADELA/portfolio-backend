@@ -69,7 +69,8 @@ exports.getAllPosts = async (req, res) => {
 
       // If none or very few matches, do fuzzy matching using Levenshtein on title/excerpt
       if (!matched.length) {
-        const threshold = Math.max(1, Math.floor(q.length * 0.35));
+        // Tuned threshold: allow slightly more tolerance (40% of query length)
+        const threshold = Math.max(1, Math.floor(q.length * 0.4));
         matched = candidates.filter(p => {
           const title = p.title || '';
           const excerpt = p.excerpt || '';
