@@ -39,9 +39,24 @@ app.use(cors({
 }));
 
 
+// Use Helmet with a relaxed Content Security Policy for SEO endpoint images
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      connectSrc: ["'self'", 'https://res.cloudinary.com'],
+      fontSrc: ["'self'", 'data:'],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
+    }
+  }
 }));
 
 app.options('*', cors());
