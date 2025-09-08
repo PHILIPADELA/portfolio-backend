@@ -6,9 +6,37 @@ const cloudinary = require('../utils/cloudinary');
 
 exports.getAllPosts = async (req, res) => {
   try {
-    const posts = await BlogPost.find()
-      .sort({ createdAt: -1 });
-    res.json(posts);
+    // Pagination params
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(12, parseInt(req.query.limit, 10) || 6); // default 6, cap 50
+
+    // Build query filters
+    const query = {};
+    if (req.query.search) {
+      const q = req.query.search;
+      query.$or = [
+        { title: { $regex: q, $options: 'i' } },
+        { excerpt: { $regex: q, $options: 'i' } },
+        { content: { $regex: q, $options: 'i' } },
+      ];
+    }
+    if (req.query.category) {
+      query.category = req.query.category;
+    }
+
+    // Sorting
+    let sort = { createdAt: -1 };
+    if (req.query.sortBy === 'title') {
+      sort = { title: 1 };
+    }
+
+    const total = await BlogPost.countDocuments(query);
+    const posts = await BlogPost.find(query)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.json({ posts, total, page, limit });
   } catch (error) {
     console.error('Error fetching blog posts:', error);
     res.status(500).json({ message: 'Error fetching blog posts', error: error.message });
