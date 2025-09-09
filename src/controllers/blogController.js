@@ -288,21 +288,21 @@ exports.createPost = async (req, res) => {
     });
 
     await blogPost.save();
-    // Fire-and-forget: Ping Google with sitemap URL to notify of content change
+    // Fire-and-forget: Ping Google with the article URL to notify of content change
     try {
-      const sitemapUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/sitemap.xml`;
-      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
+      const articleUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/blog/${blogPost._id}`;
+      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(articleUrl)}`;
       https.get(pingUrl, (resPing) => {
         const { statusCode } = resPing;
-        console.log(`Google ping sent for sitemap ${sitemapUrl} , statusCode=${statusCode}`);
+        console.log(`Google ping sent for article ${articleUrl}, statusCode=${statusCode}`);
         // consume response to free socket
         resPing.on('data', () => {});
         resPing.on('end', () => {});
       }).on('error', (err) => {
-        console.warn('Error pinging Google sitemap:', err && err.message);
+        console.warn('Error pinging Google for article:', err && err.message);
       });
     } catch (err) {
-      console.warn('Failed to initiate Google ping:', err && err.message);
+      console.warn('Failed to initiate Google ping for article:', err && err.message);
     }
 
     res.status(201).json(blogPost);
@@ -369,20 +369,20 @@ exports.updatePost = async (req, res) => {  try {
       { new: true, runValidators: true }
     );
 
-    // Fire-and-forget: Ping Google with sitemap URL to notify of content change on update
+    // Fire-and-forget: Ping Google with the article URL to notify of content change on update
     try {
-      const sitemapUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/sitemap.xml`;
-      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
+      const articleUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/blog/${updatedPost._id}`;
+      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(articleUrl)}`;
       https.get(pingUrl, (resPing) => {
         const { statusCode } = resPing;
-        console.log(`Google ping sent for sitemap ${sitemapUrl} , statusCode=${statusCode}`);
+        console.log(`Google ping sent for article ${articleUrl}, statusCode=${statusCode}`);
         resPing.on('data', () => {});
         resPing.on('end', () => {});
       }).on('error', (err) => {
-        console.warn('Error pinging Google sitemap on update:', err && err.message);
+        console.warn('Error pinging Google for article on update:', err && err.message);
       });
     } catch (err) {
-      console.warn('Failed to initiate Google ping on update:', err && err.message);
+      console.warn('Failed to initiate Google ping for article on update:', err && err.message);
     }
 
     res.json(updatedPost);
