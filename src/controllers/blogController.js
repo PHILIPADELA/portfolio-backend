@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const cloudinary = require('../utils/cloudinary');
 const probe = require('probe-image-size');
+const https = require('https');
+const config = require('../config/config');
 
 
 exports.getAllPosts = async (req, res) => {
@@ -286,6 +288,23 @@ exports.createPost = async (req, res) => {
     });
 
     await blogPost.save();
+    // Fire-and-forget: Ping Google with sitemap URL to notify of content change
+    try {
+      const sitemapUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/sitemap.xml`;
+      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
+      https.get(pingUrl, (resPing) => {
+        const { statusCode } = resPing;
+        console.log(`Google ping sent for sitemap ${sitemapUrl}, statusCode=${statusCode}`);
+        // consume response to free socket
+        resPing.on('data', () => {});
+        resPing.on('end', () => {});
+      }).on('error', (err) => {
+        console.warn('Error pinging Google sitemap:', err && err.message);
+      });
+    } catch (err) {
+      console.warn('Failed to initiate Google ping:', err && err.message);
+    }
+
     res.status(201).json(blogPost);
   } catch (error) {
     console.error('Error creating blog post:', error);

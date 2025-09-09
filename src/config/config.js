@@ -5,7 +5,7 @@ module.exports = {
   MONGODB_URI: process.env.MONGODB_URI,
   JWT_SECRET: process.env.JWT_SECRET,
   NODE_ENV: process.env.NODE_ENV || 'production',
-  CLIENT_URL: process.env.CLIENT_URL || 'https://portfolio-frontend-wheat-ten.vercel.app',
+  CLIENT_URL: process.env.CLIENT_URL || 'https://adelaportfolio.vercel.app',
   
 
   EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
