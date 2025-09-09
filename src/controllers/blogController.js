@@ -369,6 +369,22 @@ exports.updatePost = async (req, res) => {  try {
       { new: true, runValidators: true }
     );
 
+    // Fire-and-forget: Ping Google with sitemap URL to notify of content change on update
+    try {
+      const sitemapUrl = `${config.CLIENT_URL.replace(/\/$/, '')}/sitemap.xml`;
+      const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
+      https.get(pingUrl, (resPing) => {
+        const { statusCode } = resPing;
+        console.log(`Google ping sent for sitemap ${sitemapUrl}, statusCode=${statusCode}`);
+        resPing.on('data', () => {});
+        resPing.on('end', () => {});
+      }).on('error', (err) => {
+        console.warn('Error pinging Google sitemap on update:', err && err.message);
+      });
+    } catch (err) {
+      console.warn('Failed to initiate Google ping on update:', err && err.message);
+    }
+
     res.json(updatedPost);
   } catch (error) {
     console.error('Error updating blog post:', error);
