@@ -294,7 +294,7 @@ exports.createPost = async (req, res) => {
       const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
       https.get(pingUrl, (resPing) => {
         const { statusCode } = resPing;
-        console.log(`Google ping sent for sitemap ${sitemapUrl}, statusCode=${statusCode}`);
+        console.log(`Google ping sent for sitemap ${sitemapUrl} , statusCode=${statusCode}`);
         // consume response to free socket
         resPing.on('data', () => {});
         resPing.on('end', () => {});
@@ -375,7 +375,7 @@ exports.updatePost = async (req, res) => {  try {
       const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`;
       https.get(pingUrl, (resPing) => {
         const { statusCode } = resPing;
-        console.log(`Google ping sent for sitemap ${sitemapUrl}, statusCode=${statusCode}`);
+        console.log(`Google ping sent for sitemap ${sitemapUrl} , statusCode=${statusCode}`);
         resPing.on('data', () => {});
         resPing.on('end', () => {});
       }).on('error', (err) => {
