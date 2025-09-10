@@ -5,6 +5,43 @@ const cloudinary = require('../utils/cloudinary');
 const probe = require('probe-image-size');
 const https = require('https');
 const config = require('../config/config');
+const { google } = require('googleapis');
+
+/*
+  Publish a URL to Google's Indexing API.
+  Requirements:
+  - A Google Cloud service account JSON key with the Indexing API enabled.
+  - Either set GOOGLE_SERVICE_ACCOUNT_KEY (JSON string) or GOOGLE_APPLICATION_CREDENTIALS (path to keyfile) in env.
+  - The service account must be added as an owner/user in Google Search Console for the property.
+*/
+async function publishUrlToIndexing(url) {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    console.log('Indexing API credentials not found; skipping publish for', url);
+    return;
+  }
+
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY) : undefined,
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      scopes: ['https://www.googleapis.com/auth/indexing']
+    });
+
+    const client = await auth.getClient();
+    const indexing = google.indexing({ version: 'v3', auth: client });
+
+    const res = await indexing.urlNotifications.publish({
+      requestBody: {
+        url,
+        type: 'URL_UPDATED'
+      }
+    });
+
+    console.log('Indexing API publish response for', url, ':', res && res.data);
+  } catch (err) {
+    console.warn('Indexing API publish error for', url, ':', err && (err.message || err));
+  }
+}
 
 
 exports.getAllPosts = async (req, res) => {
@@ -305,6 +342,10 @@ exports.createPost = async (req, res) => {
       console.warn('Failed to initiate Google ping for article:', err && err.message);
     }
 
+    // Also attempt to notify Google's Indexing API (if credentials available)
+    publishUrlToIndexing(`${config.CLIENT_URL.replace(/\/$/, '')}/blog/${blogPost._id}`)
+      .catch(err => console.warn('Indexing API call failed (create):', err && err.message));
+
     res.status(201).json(blogPost);
   } catch (error) {
     console.error('Error creating blog post:', error);
@@ -384,6 +425,10 @@ exports.updatePost = async (req, res) => {  try {
     } catch (err) {
       console.warn('Failed to initiate Google ping for article on update:', err && err.message);
     }
+
+    // Also attempt to notify Google's Indexing API (if credentials available)
+    publishUrlToIndexing(`${config.CLIENT_URL.replace(/\/$/, '')}/blog/${updatedPost._id}`)
+      .catch(err => console.warn('Indexing API call failed (update):', err && err.message));
 
     res.json(updatedPost);
   } catch (error) {
