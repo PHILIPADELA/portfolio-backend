@@ -159,16 +159,29 @@ exports.getAllPosts = async (req, res) => {
 
 exports.getPost = async (req, res) => {
   try {
-    console.log('Getting post with ID:', req.params.id);
-    const post = await BlogPost.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { views: 1 } },
-      { new: true }
-    );
+    console.log('Getting post with ID:', req.params.id, 'incrementView=', req.query.incrementView);
+
+    // Default behaviour: do NOT increment views on every GET. Only increment when
+    // the client explicitly requests it by sending ?incrementView=true. This
+    // prevents counting non-unique (bot/preview/admin) requests. Clients should
+    // store viewed post ids in localStorage/cookies and only request increment
+    // once per device/browser.
+    let post;
+    if (String(req.query.incrementView) === 'true') {
+      post = await BlogPost.findByIdAndUpdate(
+        req.params.id,
+        { $inc: { views: 1 } },
+        { new: true }
+      );
+    } else {
+      post = await BlogPost.findById(req.params.id);
+    }
+
     if (!post) {
       console.log('Post not found');
       return res.status(404).json({ message: 'Blog post not found' });
     }
+
     console.log('Found post:', post);
     res.json(post);
   } catch (error) {
