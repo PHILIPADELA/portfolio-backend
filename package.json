@@ -33,6 +33,11 @@
     ,
     "ioredis": "^5.3.2"
   },
+  "dependenciesMeta": {
+    "fuse.js": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "nodemon": "^3.1.10"
   }

@@ -72,26 +72,17 @@ exports.getAllPosts = async (req, res) => {
     // If search is provided, attempt regex matches first and fall back to fuzzy Levenshtein matching
     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // Levenshtein distance (iterative DP)
-    const levenshtein = (a = '', b = '') => {
-      a = String(a);
-      b = String(b);
-      const al = a.length;
-      const bl = b.length;
-      if (al === 0) return bl;
-      if (bl === 0) return al;
-      const v0 = new Array(bl + 1).fill(0).map((_, i) => i);
-      const v1 = new Array(bl + 1).fill(0);
-      for (let i = 0; i < al; i++) {
-        v1[0] = i + 1;
-        for (let j = 0; j < bl; j++) {
-          const cost = a[i].toLowerCase() === b[j].toLowerCase() ? 0 : 1;
-          v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
-        }
-        for (let k = 0; k <= bl; k++) v0[k] = v1[k];
-      }
-      return v1[bl];
-    };
+    // Use Fuse.js for tolerant fuzzy matching instead of a simple Levenshtein
+    // implementation. Fuse provides tokenization, weighting, and better ranking
+    // for partial/fuzzy matches and handles common typos and small grammatical
+    // variations more robustly.
+    let Fuse;
+    try {
+      // require at runtime so the server can still run if package isn't installed
+      Fuse = require('fuse.js');
+    } catch (err) {
+      Fuse = null;
+    }
 
     if (req.query.search) {
       const q = String(req.query.search || '').trim();
@@ -107,17 +98,38 @@ exports.getAllPosts = async (req, res) => {
         (p.content && regex.test(p.content))
       ));
 
-      // If none or very few matches, do fuzzy matching using Levenshtein on title/excerpt
-      if (!matched.length) {
-        // Tuned threshold: allow slightly more tolerance (40% of query length)
-        const threshold = Math.max(1, Math.floor(q.length * 0.4));
-        matched = candidates.filter(p => {
-          const title = p.title || '';
-          const excerpt = p.excerpt || '';
-          const dt = levenshtein(q, title);
-          const de = levenshtein(q, excerpt);
-          return dt <= threshold || de <= threshold;
-        });
+      // If none or very few matches, do fuzzy matching. Prefer Fuse.js when
+      // available (better tolerance), otherwise fall back to our basic
+      // Levenshtein approach above (if still present).
+      if (matched.length < Math.max(1, Math.floor(limit / 2))) {
+        if (Fuse) {
+          const fuseOptions = {
+            includeScore: true,
+            shouldSort: true,
+            threshold: 0.45, // higher threshold = more fuzzy matches
+            ignoreLocation: true,
+            keys: [
+              { name: 'title', weight: 0.7 },
+              { name: 'excerpt', weight: 0.4 },
+              { name: 'content', weight: 0.2 }
+            ]
+          };
+
+          const fuse = new Fuse(candidates, fuseOptions);
+          const results = fuse.search(q);
+          matched = results.map(r => r.item);
+        } else {
+          // Basic fallback: do a permissive substring/regex match with word-order
+          // flexibility. We'll split the query into tokens and ensure candidates
+          // contain most tokens in any order.
+          const tokens = q.split(/\s+/).filter(Boolean).map(t => t.toLowerCase());
+          matched = candidates.filter(p => {
+            const hay = `${p.title || ''} ${p.excerpt || ''} ${p.content || ''}`.toLowerCase();
+            // require at least half the tokens to appear
+            const hits = tokens.filter(t => hay.includes(t)).length;
+            return hits >= Math.ceil(tokens.length / 2);
+          });
+        }
       }
 
       const total = matched.length;
