@@ -20,7 +20,7 @@ async function fetchPageMeta(req, res) {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'User-Agent': 'ADELA-LinkPreview/1.0 (+https://adela.example)'
+        'User-Agent': 'ADELA-LinkPreview/1.0 (+https://adelaportfolio.vercel.app)'
       },
       signal: controller.signal
     });
