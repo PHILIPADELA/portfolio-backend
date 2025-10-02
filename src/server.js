@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const reactionRoutes = require('./routes/reactionRoutes');
+const previewRoutes = require('./routes/previewRoutes');
 
 
 const app = express();
@@ -155,6 +156,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', commentRoutes);  
 app.use('/api/blog', blogRoutes);
 app.use('/api/reactions', express.json(), reactionRoutes);
+app.use('/api/preview', previewRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
